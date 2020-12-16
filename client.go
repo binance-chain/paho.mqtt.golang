@@ -618,9 +618,11 @@ func (c *client) Publish(topic string, qos byte, retained bool, payload interfac
 	switch {
 	case !c.IsConnected():
 		token.setError(ErrNotConnected)
+		DEBUG.Println(CLI, "tom: Publish return ErrNotConnected")
 		return token
 	case c.connectionStatus() == reconnecting && qos == 0:
 		token.flowComplete()
+		DEBUG.Println(CLI, "tom: Publish return reconnceting")
 		return token
 	}
 	pub := packets.NewControlPacket(packets.Publish).(*packets.PublishPacket)
@@ -655,7 +657,7 @@ func (c *client) Publish(topic string, qos byte, retained bool, payload interfac
 	case reconnecting:
 		DEBUG.Println(CLI, "storing publish message (reconnecting), topic:", topic)
 	default:
-		DEBUG.Println(CLI, "sending publish message, topic:", topic)
+		DEBUG.Println(CLI, "sending publish message, topic:", topic, " messageId:", pub.MessageID)
 		publishWaitTimeout := c.options.WriteTimeout
 		if publishWaitTimeout == 0 {
 			publishWaitTimeout = time.Second * 30

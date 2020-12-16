@@ -133,7 +133,7 @@ func (r *router) setDefaultHandler(handler MessageHandler) {
 // anything is sent down the stop channel the function will end.
 func (r *router) matchAndDispatch(messages <-chan *packets.PublishPacket, order bool, client *client) {
 	for message := range messages {
-		// DEBUG.Println(ROU, "matchAndDispatch received message")
+		DEBUG.Println(ROU, "matchAndDispatch received messageId:", message.MessageID)
 		sent := false
 		r.RLock()
 		m := messageFromPublish(message, ackFunc(client.oboundP, client.persist, message))
@@ -145,8 +145,11 @@ func (r *router) matchAndDispatch(messages <-chan *packets.PublishPacket, order 
 				} else {
 					hd := e.Value.(*route).callback
 					go func() {
+						DEBUG.Println(ROU, "before handle1 topic:", message.TopicName, "messageId", message.MessageID)
 						hd(client, m)
+						DEBUG.Println(ROU, "after handle1")
 						m.Ack()
+						DEBUG.Println(ROU, "after handle1 ack")
 					}()
 				}
 				sent = true
@@ -158,8 +161,11 @@ func (r *router) matchAndDispatch(messages <-chan *packets.PublishPacket, order 
 					handlers = append(handlers, r.defaultHandler)
 				} else {
 					go func() {
+						DEBUG.Println(ROU, "before defaultHandler topic:", message.TopicName, "messageId", message.MessageID)
 						r.defaultHandler(client, m)
+						DEBUG.Println(ROU, "after defaultHandler")
 						m.Ack()
+						DEBUG.Println(ROU, "after defaultHandler ack")
 					}()
 				}
 			} else {
@@ -168,8 +174,11 @@ func (r *router) matchAndDispatch(messages <-chan *packets.PublishPacket, order 
 		}
 		r.RUnlock()
 		for _, handler := range handlers {
+			DEBUG.Println(ROU, "before handle2 topic:", message.TopicName, "messageId", message.MessageID)
 			handler(client, m)
+			DEBUG.Println(ROU, "after handle2")
 			m.Ack()
+			DEBUG.Println(ROU, "after handle2 ack")
 		}
 		// DEBUG.Println(ROU, "matchAndDispatch handled message")
 	}
